@@ -250,3 +250,15 @@ Caused by: org.apache.nifi.authentication.exception.InvalidLoginCredentialsExcep
 2025-04-23 08:38:37,545 INFO [main] o.a.n.a.single.user.SingleUserAuthorizer Configuring Authorizer
 2025-04-23 08:38:52,501 INFO [main] o.a.n.w.s.c.KeyPairGeneratorConfiguration Configured Key Pair Algorithm [Ed25519] for JSON Web Signatures
 2025-04-23 11:20:59,938 INFO [ShutdownCommand] o.a.n.a.single.user.SingleUserAuthorizer Destroying Authorizer
+2025-04-23 16:04:00,805 INFO [main] o.a.n.a.single.user.SingleUserAuthorizer Initializing Authorizer
+2025-04-23 16:04:00,835 INFO [main] o.a.n.a.FileUserGroupProvider Creating new users file at /opt/nifi/nifi-current/./conf/users.xml
+2025-04-23 16:04:00,872 INFO [main] o.a.n.a.FileAccessPolicyProvider Creating new authorizations file at /opt/nifi/nifi-current/./conf/authorizations.xml
+2025-04-23 16:04:00,883 INFO [main] o.a.n.a.single.user.SingleUserAuthorizer Configuring Authorizer
+2025-04-23 16:04:11,693 INFO [main] o.a.n.w.s.c.KeyPairGeneratorConfiguration Configured Key Pair Algorithm [Ed25519] for JSON Web Signatures
+2025-04-23 17:22:31,358 INFO [ShutdownCommand] o.a.n.a.single.user.SingleUserAuthorizer Destroying Authorizer
+2025-04-23 17:23:47,805 INFO [main] o.a.n.a.single.user.SingleUserAuthorizer Initializing Authorizer
+2025-04-23 17:23:47,836 INFO [main] o.a.n.a.FileUserGroupProvider Creating new users file at /opt/nifi/nifi-current/./conf/users.xml
+2025-04-23 17:23:47,878 INFO [main] o.a.n.a.FileAccessPolicyProvider Creating new authorizations file at /opt/nifi/nifi-current/./conf/authorizations.xml
+2025-04-23 17:23:47,895 INFO [main] o.a.n.a.single.user.SingleUserAuthorizer Configuring Authorizer
+2025-04-23 17:23:59,775 INFO [main] o.a.n.w.s.c.KeyPairGeneratorConfiguration Configured Key Pair Algorithm [Ed25519] for JSON Web Signatures
+2025-04-23 17:40:53,140 INFO [ShutdownCommand] o.a.n.a.single.user.SingleUserAuthorizer Destroying Authorizer
