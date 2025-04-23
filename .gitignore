@@ -1,2 +1,6 @@
-nifi
-.jar
+# Ignore NiFi folder
+nifi/
+
+# Ignore .jar files
+*.jar
+
