@@ -10,19 +10,26 @@ import gzip
 import zipfile
 import time
 from typing import List, Dict, Any, Tuple
+import pathlib
+from pathlib import Path
 
-# Configuration
 IPDR_COUNT = 4000
 EDR_COUNT = 5000
 CDR_COUNT = 2500
 
-# Create output directory if it doesn't exist
-os.makedirs("generated_data", exist_ok=True)
+script_dir = pathlib.Path(__file__).parent.resolve()
+parent_dir = script_dir.parent
+output_dir = parent_dir / "generated_data"
+output_dir.mkdir(parents=True, exist_ok=True)
+ipdr_subdir = output_dir / "ipdr_subdir"
+cdr_subdir = output_dir / "cdr_subdir"
+edr_subdir = output_dir / "edr_subdir"
+for subdir_name in ["ipdr_subdir", "cdr_subdir", "edr_subdir"]:
+    (output_dir / subdir_name).mkdir(parents=True, exist_ok=True)
 
-# Seed for reproducibility
+
 random.seed(42)
 
-# Constants and helper data
 DOMAINS = [
     "fileshare.cc", "youtube.com", "netflix.com", "zoom.us", "facebook.com", 
     "instagram.com", "amazon.in", "flipkart.com", "twitter.com", "snapchat.com"
@@ -92,7 +99,6 @@ CDR_FIELD_VARIATIONS = [
     }
 ]
 
-# Helper functions
 def generate_phone_number() -> str:
     """Generate a random 13-digit phone number."""
     return str(random.randint(1000000000000, 9999999999999))
@@ -131,19 +137,15 @@ def maybe_corrupt(value, probability=0.01):
     """Corrupt a value with a small probability."""
     if random.random() < probability:
         if isinstance(value, str):
-            # Corrupt string by dropping a character
             if len(value) > 1:
                 pos = random.randint(0, len(value) - 1)
                 return value[:pos] + value[pos+1:]
             return value
         elif isinstance(value, int):
-            # Corrupt number by adding noise
             return value + random.randint(-10, 10)
         elif isinstance(value, float):
-            # Corrupt float by adding noise
             return value + random.uniform(-1, 1)
         elif isinstance(value, bool):
-            # Flip boolean
             return not value
     return value
 
@@ -154,17 +156,14 @@ def random_date(start_date, end_date):
     random_seconds = random.randrange(86400)  # seconds in a day
     return start_date + datetime.timedelta(days=random_days, seconds=random_seconds)
 
-# Record generation functions
+
 def generate_ipdr_records(count: int) -> List[Dict]:
     """Generate IPDR (Internet Protocol Detail Record) data."""
     records = []
     
     for _ in range(count):
-        # For each record, pick one field name variation consistently
-        # instead of mixing different variations within the same record
         field_variation = random.choice(IPDR_FIELD_VARIATIONS)
-        
-        # Choose one consistent field name for this record
+
         user_id_field = random.choice(field_variation["user_id"])
         timestamp_field = random.choice(field_variation["timestamp"])
         domain_field = random.choice(field_variation["domain"])
@@ -175,19 +174,16 @@ def generate_ipdr_records(count: int) -> List[Dict]:
         bytes_sent_field = random.choice(field_variation["bytes_sent"])
         bytes_received_field = random.choice(field_variation["bytes_received"])
         vpn_usage_field = random.choice(field_variation["vpn_usage"])
-        
-        # Generate base data
+
         user_id = generate_phone_number()
         timestamp = random_date(
             datetime.datetime(2023, 1, 1), 
             datetime.datetime(2023, 12, 31)
         )
         
-        # Format timestamp in a random format
         timestamp_formatter = random.choice(TIMESTAMP_FORMATS)
         formatted_timestamp = timestamp_formatter(timestamp)
         
-        # Generate record with the chosen field names
         record = {
             user_id_field: user_id,
             timestamp_field: formatted_timestamp,
@@ -203,8 +199,7 @@ def generate_ipdr_records(count: int) -> List[Dict]:
         }
         
         records.append(record)
-    
-    # Add some duplicates
+
     records = maybe_duplicate(records)
     
     return records
@@ -214,10 +209,8 @@ def generate_edr_records(count: int) -> List[Dict]:
     records = []
     
     for _ in range(count):
-        # For each record, pick one field name variation consistently
         field_variation = random.choice(EDR_FIELD_VARIATIONS)
-        
-        # Choose one consistent field name for this record
+
         event_id_field = random.choice(field_variation["event_id"])
         user_id_field = random.choice(field_variation["user_id"])
         device_model_field = random.choice(field_variation["device_model"])
@@ -227,19 +220,16 @@ def generate_edr_records(count: int) -> List[Dict]:
         event_time_field = random.choice(field_variation["event_time"])
         location_field = random.choice(field_variation["location"])
         event_type_field = random.choice(field_variation["event_type"])
-        
-        # Generate base data
+
         user_id = generate_phone_number()
         event_time = random_date(
             datetime.datetime(2023, 1, 1), 
             datetime.datetime(2023, 12, 31)
         )
-        
-        # Format timestamp in a random format
+
         timestamp_formatter = random.choice(TIMESTAMP_FORMATS)
         formatted_timestamp = timestamp_formatter(event_time)
-        
-        # Generate record with the chosen field names
+
         record = {
             event_id_field: maybe_null(str(uuid.uuid4())),
             user_id_field: user_id,
@@ -254,8 +244,7 @@ def generate_edr_records(count: int) -> List[Dict]:
         }
         
         records.append(record)
-    
-    # Add some duplicates
+
     records = maybe_duplicate(records)
     
     return records
@@ -265,10 +254,8 @@ def generate_cdr_records(count: int) -> List[Dict]:
     records = []
     
     for _ in range(count):
-        # For each record, pick one field name variation consistently
         field_variation = random.choice(CDR_FIELD_VARIATIONS)
-        
-        # Choose one consistent field name for this record
+
         caller_id_field = random.choice(field_variation["caller_id"])
         callee_id_field = random.choice(field_variation["callee_id"])
         call_start_field = random.choice(field_variation["call_start"])
@@ -277,20 +264,17 @@ def generate_cdr_records(count: int) -> List[Dict]:
         cell_id_field = random.choice(field_variation["cell_id"])
         location_field = random.choice(field_variation["location"])
         imei_field = random.choice(field_variation["imei"])
-        
-        # Generate base data
+
         caller_id = generate_phone_number()
         callee_id = generate_phone_number()
         call_start = random_date(
             datetime.datetime(2023, 1, 1), 
             datetime.datetime(2023, 12, 31)
         )
-        
-        # Format timestamp in a random format
+
         timestamp_formatter = random.choice(TIMESTAMP_FORMATS)
         formatted_timestamp = timestamp_formatter(call_start)
-        
-        # Generate record with the chosen field names
+
         record = {
             caller_id_field: caller_id,
             callee_id_field: callee_id,
@@ -304,13 +288,11 @@ def generate_cdr_records(count: int) -> List[Dict]:
         }
         
         records.append(record)
-    
-    # Add some duplicates
+
     records = maybe_duplicate(records)
     
     return records
 
-# Export functions for various formats
 def export_to_json(records: List[Dict], filename: str):
     """Export records to a JSON file."""
     with open(filename, 'w') as f:
@@ -321,8 +303,7 @@ def export_to_csv(records: List[Dict], filename: str):
     """Export records to a CSV file."""
     if not records:
         return
-    
-    # Collect all possible field names across all records
+
     all_fields = set()
     for record in records:
         all_fields.update(record.keys())
@@ -330,8 +311,7 @@ def export_to_csv(records: List[Dict], filename: str):
     with open(filename, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=list(all_fields))
         writer.writeheader()
-        
-        # For each record, ensure all fields are present (with None for missing fields)
+
         for record in records:
             row = {field: record.get(field, None) for field in all_fields}
             writer.writerow(row)
@@ -345,19 +325,15 @@ def export_to_xml(records: List[Dict], filename: str, root_tag: str, item_tag: s
     for record in records:
         item = ET.SubElement(root, item_tag)
         for key, value in record.items():
-            # Handle None values
             if value is None:
                 continue
-                
-            # Format boolean values as lowercase strings
+
             if isinstance(value, bool):
                 value = str(value).lower()
-                
-            # Create element with text content
+
             field = ET.SubElement(item, key)
             field.text = str(value)
-    
-    # Pretty print the XML
+
     xml_str = ET.tostring(root, encoding='utf-8')
     dom = xml.dom.minidom.parseString(xml_str)
     pretty_xml = dom.toprettyxml(indent="  ")
@@ -368,16 +344,13 @@ def export_to_xml(records: List[Dict], filename: str, root_tag: str, item_tag: s
 
 def export_to_gzip(records: List[Dict], filename: str, format_func, *args):
     """Export records to a gzipped file."""
-    # Create a temporary file
     temp_filename = filename.replace('.gz', '')
     format_func(records, temp_filename, *args)
-    
-    # Compress the file
+
     with open(temp_filename, 'rb') as f_in:
         with gzip.open(filename, 'wb') as f_out:
             f_out.write(f_in.read())
-    
-    # Remove the temporary file
+
     os.remove(temp_filename)
     print(f"Compressed {len(records)} records to {filename}")
 
@@ -386,18 +359,14 @@ def export_to_zip(records: List[Dict], filename: str, format_func, *args):
     # Create a temporary file
     temp_filename = os.path.basename(filename).replace('.zip', '')
     format_func(records, temp_filename, *args)
-    
-    # Compress the file
+
     with zipfile.ZipFile(filename, 'w') as zipf:
         zipf.write(temp_filename)
-    
-    # Remove the temporary file
+
     os.remove(temp_filename)
     print(f"Compressed {len(records)} records to {filename}")
 
-# Main execution
 def main():
-    # Generate records
     print("Generating IPDR records...")
     ipdr_records = generate_ipdr_records(IPDR_COUNT)
     
@@ -406,33 +375,25 @@ def main():
     
     print("Generating CDR records...")
     cdr_records = generate_cdr_records(CDR_COUNT)
-    
-    # Export IPDR records in different formats
-    export_to_json(ipdr_records, "generated_data/ipdr_records.json")
-    export_to_csv(ipdr_records, "generated_data/ipdr_records.csv")
-    export_to_xml(ipdr_records, "generated_data/ipdr_records.xml", "ipdr_data", "ipdr_record")
-    export_to_gzip(ipdr_records, "generated_data/ipdr_records.json.gz", export_to_json)
-    export_to_zip(ipdr_records, "generated_data/ipdr_records.csv.zip", export_to_csv)
-    
-    # Export EDR records in different formats
-    export_to_json(edr_records, "generated_data/edr_records.json")
-    export_to_csv(edr_records, "generated_data/edr_records.csv")
-    export_to_xml(edr_records, "generated_data/edr_records.xml", "edr_data", "edr_record")
-    export_to_gzip(edr_records, "generated_data/edr_records.json.gz", export_to_json)
-    export_to_zip(edr_records, "generated_data/edr_records.csv.zip", export_to_csv)
-    
-    # Export CDR records in different formats
-    export_to_json(cdr_records, "generated_data/cdr_records.json")
-    export_to_csv(cdr_records, "generated_data/cdr_records.csv")
-    export_to_xml(cdr_records, "generated_data/cdr_records.xml", "cdr_data", "cdr_record")
-    export_to_gzip(cdr_records, "generated_data/cdr_records.json.gz", export_to_json)
-    export_to_zip(cdr_records, "generated_data/cdr_records.csv.zip", export_to_csv)
-    
-    print("\nData generation complete. Files are in the 'generated_data' directory.")
-    print("\nTarget formats for transformation should be:")
-    print("IPDR: user_id timestamp domain ip_dst port protocol duration bytes_sent bytes_received vpn_usage is_fraud")
-    print("EDR: event_id user_id device_model os_type roaming_status network_type event_time location event_type is_fraud")
-    print("CDR: caller_id callee_id call_start call_duration call_type cell_id location imei is_fraud")
+
+
+    export_to_json(ipdr_records, str(ipdr_subdir / "ipdr_records.json"))
+    export_to_csv(ipdr_records, str(ipdr_subdir / "ipdr_records.csv"))
+    export_to_xml(ipdr_records, str(ipdr_subdir / "ipdr_records.xml"), "ipdr_data", "ipdr_record")
+    export_to_gzip(ipdr_records, str(ipdr_subdir / "ipdr_records.json.gz"), export_to_json)
+    export_to_zip(ipdr_records, str(ipdr_subdir / "ipdr_records.csv.zip"), export_to_csv)
+
+    export_to_json(edr_records, str(edr_subdir / "edr_records.json"))
+    export_to_csv(edr_records, str(edr_subdir / "edr_records.csv"))
+    export_to_xml(edr_records, str(edr_subdir / "edr_records.xml"), "edr_data", "edr_record")
+    export_to_gzip(edr_records, str(edr_subdir / "edr_records.json.gz"), export_to_json)
+    export_to_zip(edr_records, str(edr_subdir / "edr_records.csv.zip"), export_to_csv)
+
+    export_to_json(cdr_records, str(cdr_subdir / "cdr_records.json"))
+    export_to_csv(cdr_records, str(cdr_subdir / "cdr_records.csv"))
+    export_to_xml(cdr_records, str(cdr_subdir / "cdr_records.xml"), "cdr_data", "cdr_record")
+    export_to_gzip(cdr_records, str(cdr_subdir / "cdr_records.json.gz"), export_to_json)
+    export_to_zip(cdr_records, str(cdr_subdir / "cdr_records.csv.zip"), export_to_csv)
 
 if __name__ == "__main__":
     main()

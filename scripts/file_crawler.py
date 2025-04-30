@@ -8,7 +8,6 @@ import datetime
 import pandas as pd
 from typing import List, Dict, Any, Tuple, Optional
 
-# Define the target schemas
 TARGET_SCHEMAS = {
     'ipdr': [
         'user_id', 'timestamp', 'domain', 'ip_dst', 'port', 'protocol', 
@@ -24,52 +23,42 @@ TARGET_SCHEMAS = {
     ]
 }
 
-# Field mapping dictionaries for each record type
-# This maps all possible field names to the target field name
 IPDR_FIELD_MAPPING = {
-    # user_id variations
     'user_id': 'user_id',
     'subscriber_id': 'user_id',
     'customer_id': 'user_id',
     'msisdn': 'user_id',
     
-    # timestamp variations
     'timestamp': 'timestamp',
     'access_time': 'timestamp',
     'connection_time': 'timestamp',
     'event_timestamp': 'timestamp',
-    
-    # domain variations
+
     'domain': 'domain',
     'destination_domain': 'domain',
     'host': 'domain',
     'url': 'domain',
-    
-    # ip_dst variations
+
     'ip_dst': 'ip_dst',
     'destination_ip': 'ip_dst',
     'remote_ip': 'ip_dst',
     'server_ip': 'ip_dst',
-    
-    # port variations
+
     'port': 'port',
     'dest_port': 'port',
     'server_port': 'port',
     'remote_port': 'port',
-    
-    # protocol variations
+
     'protocol': 'protocol',
     'service_protocol': 'protocol',
     'conn_protocol': 'protocol',
     'transport_protocol': 'protocol',
-    
-    # duration variations
+
     'duration': 'duration',
     'session_duration': 'duration',
     'connection_time': 'duration',
     'time_spent': 'duration',
-    
-    # bytes_sent variations
+
     'bytes_sent': 'bytes_sent',
     'upload_bytes': 'bytes_sent',
     'upstream_data': 'bytes_sent',
@@ -80,137 +69,114 @@ IPDR_FIELD_MAPPING = {
     'download_bytes': 'bytes_received',
     'downstream_data': 'bytes_received',
     'rx_bytes': 'bytes_received',
-    
-    # vpn_usage variations
+
     'vpn_usage': 'vpn_usage',
     'vpn_detected': 'vpn_usage',
     'is_vpn': 'vpn_usage',
     'encrypted_tunnel': 'vpn_usage',
-    
-    # is_fraud
+
     'is_fraud': 'is_fraud'
 }
 
 EDR_FIELD_MAPPING = {
-    # event_id variations
     'event_id': 'event_id',
     'session_id': 'event_id',
     'transaction_id': 'event_id',
     'tracking_id': 'event_id',
-    
-    # user_id variations
+
     'user_id': 'user_id',
     'subscriber_id': 'user_id',
     'msisdn': 'user_id',
     'phone_number': 'user_id',
-    
-    # device_model variations
+
     'device_model': 'device_model',
     'device_type': 'device_model',
     'handset': 'device_model',
     'terminal_model': 'device_model',
-    
-    # os_type variations
+
     'os_type': 'os_type',
     'os_version': 'os_type',
     'platform': 'os_type',
     'device_os': 'os_type',
-    
-    # roaming_status variations
+
     'roaming_status': 'roaming_status',
     'is_roaming': 'roaming_status',
     'roaming_active': 'roaming_status',
     'home_network': 'roaming_status',
-    
-    # network_type variations
+
     'network_type': 'network_type',
     'connection_type': 'network_type',
     'access_technology': 'network_type',
     'bearer_type': 'network_type',
-    
-    # event_time variations
+
     'event_time': 'event_time',
     'timestamp': 'event_time',
     'log_time': 'event_time',
     'recorded_at': 'event_time',
     
-    # location variations
     'location': 'location',
     'geo_coordinates': 'location',
     'position': 'location',
     'cell_location': 'location',
-    
-    # event_type variations
+
     'event_type': 'event_type',
     'action': 'event_type',
     'event_name': 'event_type',
     'service_action': 'event_type',
-    
-    # is_fraud
+
     'is_fraud': 'is_fraud'
 }
 
 CDR_FIELD_MAPPING = {
-    # caller_id variations
     'caller_id': 'caller_id',
     'calling_party': 'caller_id',
     'a_number': 'caller_id',
     'originating_number': 'caller_id',
     
-    # callee_id variations
     'callee_id': 'callee_id',
     'called_party': 'callee_id',
     'b_number': 'callee_id',
     'terminating_number': 'callee_id',
-    
-    # call_start variations
+
     'call_start': 'call_start',
     'start_time': 'call_start',
     'setup_time': 'call_start',
     'connection_time': 'call_start',
-    
-    # call_duration variations
+
     'call_duration': 'call_duration',
     'duration': 'call_duration',
     'call_length': 'call_duration',
     'billable_seconds': 'call_duration',
-    
-    # call_type variations
+
     'call_type': 'call_type',
     'service_type': 'call_type',
     'call_category': 'call_type',
     'communication_type': 'call_type',
-    
-    # cell_id variations
+
     'cell_id': 'cell_id',
     'cell_identity': 'cell_id',
     'tower_id': 'cell_id',
     'bts_id': 'cell_id',
-    
-    # location variations
+
     'location': 'location',
     'geo_coordinates': 'location',
     'tower_location': 'location',
     'subscriber_location': 'location',
-    
-    # imei variations
+
     'imei': 'imei',
     'device_id': 'imei',
     'terminal_id': 'imei',
     'equipment_id': 'imei',
-    
-    # is_fraud
+
     'is_fraud': 'is_fraud'
 }
 
-# Master mapping dictionary
 FIELD_MAPPINGS = {
     'ipdr': IPDR_FIELD_MAPPING,
     'edr': EDR_FIELD_MAPPING,
     'cdr': CDR_FIELD_MAPPING
 }
 
-# Functions to handle various timestamp formats
 def normalize_timestamp(timestamp_value: str) -> Optional[str]:
     """
     Normalizes various timestamp formats to standard 'YYYY-MM-DD HH:MM:SS'
@@ -235,14 +201,12 @@ def normalize_timestamp(timestamp_value: str) -> Optional[str]:
         except ValueError:
             pass
     
-    # Try Unix timestamp
     try:
         dt = datetime.datetime.fromtimestamp(float(timestamp_str))
         return dt.strftime('%Y-%m-%d %H:%M:%S')
     except (ValueError, OverflowError):
         pass
-    
-    # If we can't parse it, return as is
+
     return timestamp_str
 
 def normalize_boolean(value: Any) -> Optional[bool]:
@@ -259,14 +223,12 @@ def normalize_boolean(value: Any) -> Optional[bool]:
             return True
         if value in ('false', 'f', 'no', 'n', '0'):
             return False
-            
-    # Try numeric conversion
+
     try:
         return bool(int(value))
     except (ValueError, TypeError):
         return None
 
-# File readers
 def read_json_file(file_path: str) -> List[Dict]:
     """Read records from a JSON file."""
     with open(file_path, 'r') as f:
@@ -278,7 +240,6 @@ def read_csv_file(file_path: str) -> List[Dict]:
     with open(file_path, 'r', newline='') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Convert empty strings to None
             cleaned_row = {k: (v if v != '' else None) for k, v in row.items()}
             records.append(cleaned_row)
     return records
@@ -292,11 +253,9 @@ def read_xml_file(file_path: str, record_tag: str) -> List[Dict]:
     for record_elem in root.findall(f'.//{record_tag}'):
         record = {}
         for child in record_elem:
-            # Convert text 'None' to Python None
             value = child.text
             if value == 'None' or value is None:
                 record[child.tag] = None
-            # Convert boolean text to actual booleans
             elif value.lower() in ('true', 'false'):
                 record[child.tag] = value.lower() == 'true'
             else:
@@ -314,19 +273,15 @@ def read_zip_csv_file(file_path: str) -> List[Dict]:
     """Read records from a zipped CSV file."""
     records = []
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
-        # Get the first file in the archive
         file_name = zip_ref.namelist()[0]
         with zip_ref.open(file_name) as csvfile:
-            # Need to decode bytes to string for CSV reader
             lines = [line.decode('utf-8') for line in csvfile]
             reader = csv.DictReader(lines)
             for row in reader:
-                # Convert empty strings to None
                 cleaned_row = {k: (v if v != '' else None) for k, v in row.items()}
                 records.append(cleaned_row)
     return records
 
-# Main mapper function
 def map_to_standard_schema(records: List[Dict], record_type: str) -> List[Dict]:
     """
     Map records with varying field names to a standardized schema
@@ -336,41 +291,31 @@ def map_to_standard_schema(records: List[Dict], record_type: str) -> List[Dict]:
     standardized_records = []
     
     for record in records:
-        # Create a new record with standardized field names
         std_record = {}
-        
-        # First pass - apply known mappings
+
         for source_field, value in record.items():
             if source_field in field_mapping:
                 target_field = field_mapping[source_field]
                 
-                # Skip if we already have a value for this target field
                 if target_field in std_record:
                     continue
-                
-                # Normalize timestamp fields
+
                 if 'time' in target_field or 'timestamp' in target_field or 'start' in target_field:
                     std_record[target_field] = normalize_timestamp(value)
-                # Normalize boolean fields
                 elif 'vpn' in target_field or 'roaming' in target_field or 'fraud' in target_field:
                     std_record[target_field] = normalize_boolean(value)
                 else:
                     std_record[target_field] = value
-        
-        # Check for missing fields
+
         missing_fields = [field for field in target_schema if field not in std_record]
-        
-        # If we have missing fields, try to infer mappings
+
         if missing_fields and len(missing_fields) < len(target_schema):
-            # Print warning about missing fields
             missing_fields_str = ', '.join(missing_fields)
             print(f"Warning: Record missing fields: {missing_fields_str}")
-            
-            # Add placeholder nulls for missing fields
+
             for field in missing_fields:
                 std_record[field] = None
-        
-        # Only add records that have at least some of the required fields
+
         if std_record:
             standardized_records.append(std_record)
     
@@ -386,7 +331,16 @@ def identify_record_type(file_path: str) -> str:
     elif 'cdr' in filename:
         return 'cdr'
     else:
-        raise ValueError(f"Unknown record type for file: {file_path}")
+        # Check parent directory name if not in filename
+        parent_dir = os.path.basename(os.path.dirname(file_path)).lower()
+        if 'ipdr' in parent_dir:
+            return 'ipdr'
+        elif 'edr' in parent_dir:
+            return 'edr'
+        elif 'cdr' in parent_dir:
+            return 'cdr'
+        else:
+            raise ValueError(f"Unknown record type for file: {file_path}")
 
 def detect_file_format(file_path: str) -> Tuple[str, dict]:
     """
@@ -429,174 +383,142 @@ def read_records_from_file(file_path: str) -> List[Dict]:
     reader_func = readers[format_type]
     return reader_func(**params)
 
-def process_directory(directory_path: str, output_dir: str = None):
+def process_file(file_path: str, temp_dir: str) -> Tuple[str, str, str]:
     """
-    Process all files in a directory, automatically mapping fields.
+    Process a single file and return the record type and path to the standardized CSV.
     """
-    if output_dir is None:
-        output_dir = os.path.join(directory_path, 'standardized')
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Process each file
-    for filename in os.listdir(directory_path):
-        file_path = os.path.join(directory_path, filename)
-        
-        # Skip directories and non-data files
-        if os.path.isdir(file_path) or not any(ext in filename.lower() for ext in ['.json', '.csv', '.xml', '.gz', '.zip']):
-            continue
-        
-        try:
-            print(f"Processing {filename}...")
-            
-            # Identify record type
-            record_type = identify_record_type(file_path)
-            
-            # Read records
-            records = read_records_from_file(file_path)
-            print(f"  Read {len(records)} records")
-            
-            # Map to standard schema
-            standardized_records = map_to_standard_schema(records, record_type)
-            print(f"  Mapped to {len(standardized_records)} standardized records")
-            
-            # Get stats on mapped fields
-            if standardized_records:
-                field_coverage = {field: sum(1 for r in standardized_records if r.get(field) is not None) / len(standardized_records) * 100 
-                                 for field in TARGET_SCHEMAS[record_type]}
-                
-                print("  Field mapping coverage:")
-                for field, coverage in field_coverage.items():
-                    print(f"    {field}: {coverage:.1f}%")
-            
-            # Save standardized records
-            output_filename = f"standardized_{record_type}_{os.path.splitext(filename)[0]}.csv"
-            output_path = os.path.join(output_dir, output_filename)
-            
-            df = pd.DataFrame(standardized_records)
-            # Reorder columns to match target schema
-            df = df.reindex(columns=TARGET_SCHEMAS[record_type])
-            df.to_csv(output_path, index=False)
-            
-            print(f"  Saved to {output_path}")
-            
-        except Exception as e:
-            print(f"Error processing {filename}: {str(e)}")
+    try:
+        record_type = identify_record_type(file_path)
+        records = read_records_from_file(file_path)
+        print(f"  Read {len(records)} records from {os.path.basename(file_path)}")
 
-def process_specific_record_type(directory_path: str, record_type: str, output_dir: str = None):
-    """
-    Process only files of a specific record type (CDR, IPDR, EDR).
-    """
-    if output_dir is None:
-        output_dir = os.path.join(directory_path, f'standardized_{record_type}')
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Process each file
-    for filename in os.listdir(directory_path):
-        file_path = os.path.join(directory_path, filename)
-        
-        # Skip directories and files not matching the requested record type
-        if os.path.isdir(file_path) or record_type not in filename.lower():
-            continue
-        
-        try:
-            print(f"Processing {filename}...")
-            
-            # Read records
-            records = read_records_from_file(file_path)
-            print(f"  Read {len(records)} records")
-            
-            # Map to standard schema
-            standardized_records = map_to_standard_schema(records, record_type)
-            print(f"  Mapped to {len(standardized_records)} standardized records")
-            
-            # Get stats on mapped fields
-            if standardized_records:
-                field_coverage = {field: sum(1 for r in standardized_records if r.get(field) is not None) / len(standardized_records) * 100 
-                                 for field in TARGET_SCHEMAS[record_type]}
-                
-                print("  Field mapping coverage:")
-                for field, coverage in field_coverage.items():
-                    print(f"    {field}: {coverage:.1f}%")
-            
-            # Save standardized records
-            output_filename = f"standardized_{os.path.splitext(filename)[0]}.csv"
-            output_path = os.path.join(output_dir, output_filename)
-            
-            df = pd.DataFrame(standardized_records)
-            # Reorder columns to match target schema
-            df = df.reindex(columns=TARGET_SCHEMAS[record_type])
-            df.to_csv(output_path, index=False)
-            
-            print(f"  Saved to {output_path}")
-            
-        except Exception as e:
-            print(f"Error processing {filename}: {str(e)}")
+        standardized_records = map_to_standard_schema(records, record_type)
+        print(f"  Mapped to {len(standardized_records)} standardized records")
 
-def analyze_unknown_fields(directory_path: str):
+        if not standardized_records:
+            print(f"  No valid records found in {os.path.basename(file_path)}")
+            return None, None, None
+
+        # Create a unique filename for the standardized file
+        file_basename = os.path.splitext(os.path.basename(file_path))[0]
+        output_filename = f"std_{record_type}_{file_basename}.csv"
+        output_path = os.path.join(temp_dir, output_filename)
+        
+        # Save to temporary CSV
+        df = pd.DataFrame(standardized_records)
+        df = df.reindex(columns=TARGET_SCHEMAS[record_type])
+        df.to_csv(output_path, index=False)
+        
+        print(f"  Saved temporary standardized CSV: {output_filename}")
+        
+        return record_type, output_path, file_basename
+        
+    except Exception as e:
+        print(f"Error processing {file_path}: {str(e)}")
+        return None, None, None
+
+def crawl_directories(base_path: str, final_output_dir: str):
     """
-    Analyze files to detect unknown field names that aren't in our mapping dictionaries.
-    This is useful for discovering new field variations.
+    Crawl through subdirectories, process all files, and merge them by record type.
     """
-    unknown_fields = {
-        'ipdr': set(),
-        'edr': set(),
-        'cdr': set()
+    # Create temporary directory for standardized files
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    temp_dir = os.path.join(script_dir, "temp_standardized")
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    # Create final output directory (one level above script location)
+    parent_dir = os.path.dirname(script_dir)
+    final_dir = os.path.join(parent_dir, final_output_dir)
+    os.makedirs(final_dir, exist_ok=True)
+    
+    # Dictionary to store dataframes by record type
+    merged_dfs = {
+        'ipdr': [],
+        'edr': [],
+        'cdr': []
     }
     
-    # Process each file
-    for filename in os.listdir(directory_path):
-        file_path = os.path.join(directory_path, filename)
+    # Expected subdirectories to search in
+    subdirs = ['ipdr_subdir', 'edr_subdir', 'cdr_subdir']
+    
+    # Path to generated_data is one level above script directory
+    generated_data_path = os.path.join(parent_dir, 'generated_data')
+    
+    if not os.path.exists(generated_data_path):
+        print(f"Error: Directory {generated_data_path} not found!")
+        return
+    
+    print(f"Processing data from: {generated_data_path}")
+    
+    # Walk through the subdirectories in generated_data
+    for subdir in subdirs:
+        subdir_path = os.path.join(generated_data_path, subdir)
         
-        # Skip directories and non-data files
-        if os.path.isdir(file_path) or not any(ext in filename.lower() for ext in ['.json', '.csv', '.xml', '.gz', '.zip']):
+        if not os.path.exists(subdir_path):
+            print(f"Warning: Subdirectory {subdir} not found in {generated_data_path}")
             continue
+            
+        print(f"\nProcessing subdirectory: {subdir}")
         
-        try:
-            # Identify record type
-            record_type = identify_record_type(file_path)
-            
-            # Read records
-            records = read_records_from_file(file_path)
-            
-            # Check for unknown fields
-            known_fields = set(FIELD_MAPPINGS[record_type].keys())
-            for record in records:
-                for field in record.keys():
-                    if field not in known_fields:
-                        unknown_fields[record_type].add(field)
-            
-        except Exception as e:
-            print(f"Error analyzing {filename}: {str(e)}")
+        # Process all files in the subdirectory
+        for root, dirs, files in os.walk(subdir_path):
+            for file in files:
+                if any(file.endswith(ext) for ext in ['.json', '.csv', '.xml']) or \
+                   any(file.endswith(ext) for ext in ['.json.gz', '.csv.zip']):
+                    file_path = os.path.join(root, file)
+                    print(f"\nProcessing file: {file_path}")
+                    
+                    record_type, temp_csv_path, _ = process_file(file_path, temp_dir)
+                    
+                    if record_type and temp_csv_path:
+                        # Read the standardized CSV into a dataframe
+                        try:
+                            df = pd.read_csv(temp_csv_path)
+                            if not df.empty:
+                                merged_dfs[record_type].append(df)
+                        except Exception as e:
+                            print(f"Error reading temporary CSV {temp_csv_path}: {str(e)}")
     
-    # Report unknown fields
-    print("\nUnknown Fields Analysis:")
-    for record_type, fields in unknown_fields.items():
-        if fields:
-            print(f"\n{record_type.upper()} Unknown Fields:")
-            for field in sorted(fields):
-                print(f"  - '{field}'")
+    # Merge dataframes by record type and save final outputs
+    for record_type, dfs in merged_dfs.items():
+        if dfs:
+            print(f"\nMerging {len(dfs)} files for {record_type} records...")
+            merged_df = pd.concat(dfs, ignore_index=True)
+            
+            # Final output path
+            final_path = os.path.join(final_dir, f"final_{record_type}.csv")
+            
+            # Ensure all columns from the target schema are present
+            merged_df = merged_df.reindex(columns=TARGET_SCHEMAS[record_type])
+            
+            # Save the final merged file
+            merged_df.to_csv(final_path, index=False)
+            
+            print(f"Saved final merged file: {final_path}")
+            print(f"Total records: {len(merged_df)}")
+            
+            # Report field coverage
+            field_coverage = {field: merged_df[field].notna().sum() / len(merged_df) * 100 
+                             for field in TARGET_SCHEMAS[record_type]}
+            
+            print("Field coverage in merged file:")
+            for field, coverage in field_coverage.items():
+                print(f"  {field}: {coverage:.1f}%")
         else:
-            print(f"\n{record_type.upper()}: No unknown fields found.")
+            print(f"\nNo valid files found for {record_type}")
     
-    return unknown_fields
+    # Clean up temporary files
+    print("\nCleaning up temporary files...")
+    for file in os.listdir(temp_dir):
+        os.remove(os.path.join(temp_dir, file))
+    os.rmdir(temp_dir)
+    print("Temporary files removed.")
 
 if __name__ == "__main__":
-    import argparse
+    # Set directories
+    final_output_dir = "final"
     
-    parser = argparse.ArgumentParser(description='Process telecom data with automatic field mapping')
-    parser.add_argument('--dir', type=str, required=True, help='Directory containing data files')
-    parser.add_argument('--output', type=str, default=None, help='Output directory for standardized files')
-    parser.add_argument('--type', type=str, choices=['ipdr', 'edr', 'cdr', 'all'], default='all', 
-                        help='Process only specific record type')
-    parser.add_argument('--analyze', action='store_true', help='Analyze unknown fields')
-    
-    args = parser.parse_args()
-    
-    if args.analyze:
-        analyze_unknown_fields(args.dir)
-    elif args.type == 'all':
-        process_directory(args.dir, args.output)
-    else:
-        process_specific_record_type(args.dir, args.type, args.output)
+    # Start crawling directories and merging files
+    print("Starting directory crawl and file processing...")
+    crawl_directories(os.path.dirname(os.path.abspath(__file__)), final_output_dir)
+    print("\nProcessing complete.")
