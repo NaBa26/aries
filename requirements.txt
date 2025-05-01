@@ -1,0 +1,16 @@
+# Core dependencies
+pyspark==3.4.1
+kafka-python==2.0.2
+psycopg2-binary==2.9.9
+pandas==2.1.1
+numpy==1.26.0
+
+# Data processing
+pyarrow==13.0.0
+fastavro==1.8.4
+jsonschema==4.19.1
+python-dateutil==2.8.2
+python-snappy==0.6.1
+
+# Synthetic data generation
+Faker==19.10.0
