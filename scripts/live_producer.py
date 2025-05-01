@@ -6,10 +6,8 @@ import time
 import uuid
 from datetime import datetime, timedelta
 
-# Initialize Faker for generating realistic data
 fake = Faker()
 
-# Configure Kafka producer with optimal settings for ML data pipeline
 producer = KafkaProducer(
     bootstrap_servers='localhost:9092',
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
@@ -22,7 +20,6 @@ producer = KafkaProducer(
     compression_type='gzip'
 )
 
-# Valid values (must match consumer expectations)
 valid_call_types = ["voice_in", "voice_out", "sms_in", "sms_out", "conference", "video_in", "video_out"]
 valid_event_types = ["app_launch", "login", "logout", "payment", "SIM switch", "roaming event"]
 valid_protocols = ["TCP", "UDP", "HTTP", "HTTPS", "ICMP"]
@@ -33,7 +30,6 @@ valid_device_models = [
     "pixel 7", "pixel 8", "oneplus 11", "xiaomi 13"
 ]
 
-# Domain categories for enriched features
 domain_categories = {
     "social": ["facebook.com", "instagram.com", "twitter.com", "linkedin.com", "tiktok.com"],
     "video": ["youtube.com", "netflix.com", "hulu.com", "disney.com", "vimeo.com"],
@@ -46,7 +42,7 @@ def get_random_domain_by_category():
     """Get random domain based on category distributions for more realistic data"""
     category = random.choices(
         list(domain_categories.keys()), 
-        weights=[30, 25, 15, 10, 20],  # Weighted distribution
+        weights=[30, 25, 15, 10, 20],
         k=1
     )[0]
     return random.choice(domain_categories[category])
@@ -57,7 +53,7 @@ def generate_cdr():
     call_duration = random.randint(1, 3600)
     
     imei = f"{random.randint(100000000000000, 999999999999999)}"
-    if random.random() < 0.05:  # 5% chance of null value
+    if random.random() < 0.05:
         imei = random.choice(["", "NaN", None])
     
     caller_id = f"+{random.randint(1, 9)}{random.randint(100000000, 999999999)}"
@@ -67,7 +63,7 @@ def generate_cdr():
     lng = fake.longitude()
     location = f"{lat:.6f},{lng:.6f}"
     
-    is_fraud = random.random() < 0.08  # 8% fraud rate
+    is_fraud = random.random() < 0.08
     
     return {
         "caller_id": caller_id,
@@ -79,7 +75,6 @@ def generate_cdr():
         "location": location,
         "imei": imei,
         "is_fraud": is_fraud,
-        "source": "live"
     }
 
 def generate_ipdr():
@@ -93,7 +88,7 @@ def generate_ipdr():
     
     domain = get_random_domain_by_category()
     
-    vpn_usage = random.random() < 0.2  # 20% use VPN
+    vpn_usage = random.random() < 0.2 
     is_fraud = random.random() < 0.3 if vpn_usage else random.random() < 0.05
     
     return {
@@ -108,7 +103,6 @@ def generate_ipdr():
         "bytes_received": bytes_received,
         "vpn_usage": vpn_usage,
         "is_fraud": is_fraud,
-        "source": "live"
     }
 
 def generate_edr():
@@ -127,7 +121,7 @@ def generate_edr():
     lng = fake.longitude()
     location = f"{lat:.6f},{lng:.6f}"
     
-    roaming_status = random.random() < 0.15  # 15% roaming
+    roaming_status = random.random() < 0.15
     network_type = random.choice(valid_network_types).lower()
     
     return {
@@ -141,14 +135,13 @@ def generate_edr():
         "location": location,
         "event_type": event_type,
         "is_fraud": is_fraud,
-        "source": "live"
     }
 
 def generate_correlated_events(base_count=10):
     """Generate correlated events across record types for the same user"""
     user_id = f"{random.randint(100000000000, 999999999999)}"
     base_time = fake.date_time_this_month()
-    is_fraudulent_user = random.random() < 0.1  # 10% fraudulent users
+    is_fraudulent_user = random.random() < 0.1 
     
     events = []
     
@@ -158,7 +151,7 @@ def generate_correlated_events(base_count=10):
         cdr['caller_id'] = user_id
         cdr['call_start'] = (base_time + time_offset).strftime("%Y-%m-%d %H:%M:%S")
         cdr['is_fraud'] = is_fraudulent_user and random.random() < 0.7
-        events.append(('cdr_live', cdr))
+        events.append(('cdr', cdr))
     
     for _ in range(random.randint(1, base_count * 2)):
         time_offset = timedelta(minutes=random.randint(0, 60*24))
@@ -166,7 +159,7 @@ def generate_correlated_events(base_count=10):
         ipdr['user_id'] = user_id
         ipdr['timestamp'] = (base_time + time_offset).strftime("%Y-%m-%d %H:%M:%S")
         ipdr['is_fraud'] = is_fraudulent_user and random.random() < 0.7
-        events.append(('ipdr_live', ipdr))
+        events.append(('ipdr', ipdr))
     
     for _ in range(random.randint(1, base_count)):
         time_offset = timedelta(minutes=random.randint(0, 60*24))
@@ -174,7 +167,7 @@ def generate_correlated_events(base_count=10):
         edr['user_id'] = user_id
         edr['event_time'] = (base_time + time_offset).strftime("%Y-%m-%d %H:%M:%S")
         edr['is_fraud'] = is_fraudulent_user and random.random() < 0.7
-        events.append(('edr_live', edr))
+        events.append(('edr', edr))
     
     return sorted(events, key=lambda x: x[1].get('call_start', x[1].get('timestamp', x[1].get('event_time'))))
 
@@ -220,11 +213,11 @@ def main():
                         print(f"[✗] Failed to send correlated event: {e}")
             
             else:
-                topic = random.choice(["cdr_live", "ipdr_live", "edr_live"])
+                topic = random.choice(["cdr", "ipdr", "edr"])
                 
-                if topic == "cdr_live":
+                if topic == "cdr":
                     record = generate_cdr()
-                elif topic == "ipdr_live":
+                elif topic == "ipdr":
                     record = generate_ipdr()
                 else:
                     record = generate_edr()
@@ -240,7 +233,7 @@ def main():
                 except Exception as e:
                     print(f"[✗] Failed to send message: {e}")
             
-            time.sleep(0.1)  # Control overall message rate
+            time.sleep(0.1)
             
     except KeyboardInterrupt:
         print("\nStopped by user.")

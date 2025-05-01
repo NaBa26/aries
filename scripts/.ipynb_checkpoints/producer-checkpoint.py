@@ -10,7 +10,6 @@ from pathlib import Path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 
-# Configure Kafka producer with optimal settings for ML data pipeline
 producer = KafkaProducer(
     bootstrap_servers=['localhost:9092'],
     value_serializer=lambda v: json.dumps(v, default=str).encode('utf-8'),
@@ -23,7 +22,6 @@ producer = KafkaProducer(
     compression_type='gzip'
 )
 
-# CSV file paths
 csv_files = {
     'cdr': os.path.join(parent_dir, 'final', 'final_cdr.csv'),
     'edr': os.path.join(parent_dir, 'final', 'final_edr.csv'),
@@ -34,33 +32,28 @@ csv_files = {
 batch_size = 1000
 sleep_between_records = 0.01
 
-# Valid values for standardization (must match consumer expectations)
-valid_call_types = ["voice_in", "voice_out", "sms_in", "sms_out", "conference", "video_in", "video_out"]
+valid_call_types = ["voice_in", "voice_out", "sms_in", "sms_out"]
 valid_event_types = ["app_launch", "login", "logout", "payment", "SIM switch", "roaming event"]
-valid_protocols = ["TCP", "UDP", "HTTP", "HTTPS", "ICMP"]
+valid_protocols = ["TCP", "UDP"]
 valid_network_types = ["4G", "5G", "3G", "WIFI", "LTE"]
 
 def normalize_data(data, topic_name):
     """Normalize data to match consumer expectations"""
     normalized = {}
     
-    # Convert all string fields to lowercase for consistency
     for key, value in data.items():
         if isinstance(value, str):
             normalized[key] = value.lower().strip()
         else:
             normalized[key] = value
-    
-    # Remove source field if present (added by previous version)
+
     if 'source' in normalized:
         del normalized['source']
     
-    # Standardize values based on topic
     if topic_name == 'cdr':
         if 'call_type' in normalized and normalized['call_type'] not in [ct.lower() for ct in valid_call_types]:
             normalized['call_type'] = 'voice_in'
-        
-        # Ensure boolean fields are proper booleans
+
         if 'is_fraud' in normalized:
             if isinstance(normalized['is_fraud'], str):
                 normalized['is_fraud'] = normalized['is_fraud'].lower() in ['true', 't', '1', 'yes']
@@ -68,16 +61,14 @@ def normalize_data(data, topic_name):
     elif topic_name == 'ipdr':
         if 'protocol' in normalized and normalized['protocol'] not in [p.lower() for p in valid_protocols]:
             normalized['protocol'] = 'tcp'
-            
-        # Ensure numeric fields are integers
+
         for field in ['port', 'duration', 'bytes_sent', 'bytes_received']:
             if field in normalized:
                 try:
                     normalized[field] = int(normalized[field])
                 except (ValueError, TypeError):
                     normalized[field] = 0
-        
-        # Ensure boolean fields are proper booleans
+
         for field in ['vpn_usage', 'is_fraud']:
             if field in normalized:
                 if isinstance(normalized[field], str):
@@ -119,7 +110,6 @@ def stream_csv_to_kafka(csv_file, topic_name, batch_size):
             for _, row in chunk.iterrows():
                 data = row.to_dict()
                 
-                # Normalize data to match consumer expectations
                 normalized_data = normalize_data(data, topic_name)
                 
                 try:
@@ -134,7 +124,6 @@ def stream_csv_to_kafka(csv_file, topic_name, batch_size):
                     error_count += 1
                     print(f"[✗] Failed to send message: {e}")
             
-            # Log progress with metrics
             elapsed = time.time() - chunk_time
             total_elapsed = time.time() - start_time
             records_per_second = chunk_records / elapsed if elapsed > 0 else 0

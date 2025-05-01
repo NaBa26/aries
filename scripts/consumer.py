@@ -11,9 +11,7 @@ import traceback
 
 
 def get_batch_data_path():
-    # Get directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go one level up and into "final"
     return os.path.join(script_dir, "..", "final")
 
 def main():
@@ -40,7 +38,6 @@ db_properties = {
     "rewriteBatchedStatements": "true"
 }
 
-# Constants based on specifications
 valid_protocols = ["TCP", "UDP"]
 valid_call_types = ["voice_in", "voice_out", "sms_in", "sms_out"]
 valid_event_types = ["app_launch", "login", "logout", "payment", "SIM switch", "roaming event", "reboot"]
@@ -64,7 +61,6 @@ def clean_dataframe(df, record_type):
     df = df.withColumn("batch_id", lit(batch_uuid))
     df = df.withColumn("processing_timestamp", current_timestamp())
 
-    # Define key fields per record type
     key_fields_map = {
         "cdr": ["caller_id", "callee_id", "call_start"],
         "ipdr": ["user_id", "timestamp", "domain"],
@@ -72,14 +68,12 @@ def clean_dataframe(df, record_type):
     }
     key_fields = key_fields_map.get(record_type, df.columns[:3])
 
-    # Diagnostics
     print(f"Initial record count: {df.count()}")
     for key in key_fields:
         if key in df.columns:
             null_count = df.filter(col(key).isNull() | (col(key) == "unknown")).count()
             print(f"Null or 'unknown' in {key}: {null_count}")
 
-    # Clean fields by type
     for field in df.schema.fields:
         fname, ftype = field.name, field.dataType
         if isinstance(ftype, StringType):
@@ -106,7 +100,6 @@ def clean_dataframe(df, record_type):
                 df = df.withColumn(key, when(col(key).isNull() | (col(key) == "unknown"),
                                              lit(f"default_{key.replace('_id','')}")).otherwise(col(key)))
 
-    # Record-type-specific logic
     df = apply_record_specific_cleaning(df, record_type)
 
     df = df.dropDuplicates()
@@ -124,7 +117,6 @@ def apply_record_specific_cleaning(df, record_type):
     elif record_type == "edr":
         return clean_edr(df)
     else:
-        # Fallback to standardization for unknown types
         return standardize_schema(df, record_type)
 
 def clean_cdr(df):
@@ -133,18 +125,15 @@ def clean_cdr(df):
         "cell_id", "location", "imei", "is_fraud"
     ]
 
-    # Fill missing columns
     for field in valid_fields:
         if field not in df.columns:
             df = df.withColumn(field, lit(False if field == "is_fraud" else "unknown"))
 
-    # Fix call_duration naming if needed
     if "duration" in df.columns and "call_duration" not in df.columns:
         df = df.withColumnRenamed("duration", "call_duration")
     elif "call_duration" not in df.columns:
         df = df.withColumn("call_duration", lit(0))
 
-    # Validate call_type values
     df = df.withColumn(
         "call_type",
         when(~col("call_type").isin(valid_call_types), "voice_in").otherwise(col("call_type"))
@@ -158,16 +147,13 @@ def clean_ipdr(df):
         "duration", "bytes_sent", "bytes_received", "vpn_usage", "is_fraud"
     ]
 
-    # Fill missing columns
     for field in valid_fields:
         if field not in df.columns:
             df = df.withColumn(field, lit(False if field == "is_fraud" else "unknown"))
 
-    # Fix bytes_sent and bytes_received consistency
     if "bytes" in df.columns and "bytes_sent" not in df.columns:
         df = df.withColumnRenamed("bytes", "bytes_sent")
 
-    # Ensure vpn_usage is consistent
     if "vpn" in df.columns and "vpn_usage" not in df.columns:
         df = df.withColumnRenamed("vpn", "vpn_usage")
 
@@ -179,12 +165,10 @@ def clean_edr(df):
         "network_type", "event_time", "location", "event_type", "is_fraud"
     ]
 
-    # Fill missing columns
     for field in valid_fields:
         if field not in df.columns:
             df = df.withColumn(field, lit(False if field == "is_fraud" else "unknown"))
 
-    # Ensure event_type is valid
     df = df.withColumn(
         "event_type",
         when(col("event_type").isNull(), "unknown").otherwise(col("event_type"))
